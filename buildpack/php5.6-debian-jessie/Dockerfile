@@ -1,6 +1,5 @@
-FROM debian:jessie
+FROM goodrainapps/debian:jessie-20171210
 
-ENV TZ=Asia/Shanghai
 ENV PHPIZE_DEPS \
 		autoconf \
 		file \
@@ -11,19 +10,18 @@ ENV PHPIZE_DEPS \
 RUN apt-get update && apt-get install -y \
 		$PHPIZE_DEPS \
 		ca-certificates \
-		curl \
 		libedit2 \
 		libsqlite3-0 \
 		libxml2 \
 		xz-utils \
 	--no-install-recommends && rm -r /var/lib/apt/lists/*
 
-ENV BUILD_DIR=/opt/goodrain/php-fpm
-ENV PATH=$PATH:$BUILD_DIR/bin
-ENV PHP_INI_DIR=$BUILD_DIR/etc
+ENV BUILD_DIR=/opt/goodrain
+ENV PHP_DIR=${BUILD_DIR}/php-fpm
+ENV PHP_INI_DIR=$PHP_DIR/etc
 RUN mkdir -p $PHP_INI_DIR/conf.d
 
-ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=www-data --with-fpm-group=www-data
+ENV PHP_EXTRA_CONFIGURE_ARGS --enable-fpm --with-fpm-user=rain --with-fpm-group=rain
 ENV PHP_CFLAGS="-fstack-protector-strong -fpic -fpie -O2"
 ENV PHP_CPPFLAGS="$PHP_CFLAGS"
 ENV PHP_LDFLAGS="-Wl,-O1 -Wl,--hash-style=both -pie"
@@ -31,6 +29,7 @@ ENV GPG_KEYS 0BD78B5F97500D450838F95DFE857D9A90D90EC1 6E4F6AB321FDC07F2C332E3AC2
 ENV PHP_VERSION=5.6.32
 ENV PHP_URL="https://secure.php.net/get/php-$PHP_VERSION.tar.xz/from/this/mirror" PHP_ASC_URL="https://secure.php.net/get/php-$PHP_VERSION.tar.xz.asc/from/this/mirror"
 ENV PHP_SHA256="8c2b4f721c7475fb9eabda2495209e91ea933082e6f34299d11cba88cd76e64b" PHP_MD5=""
+
 
 RUN set -xe; \
 	\
@@ -71,11 +70,28 @@ RUN set -xe; \
 	\
 	apt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false $fetchDeps
 
-COPY docker-php-source /usr/local/bin/
-COPY docker-php-ext-* /usr/local/bin/
+# ENV for nginx
+ENV PCRE_VERSION=8.41
+ENV ZLIB_VERSION=1.2.11
+ENV OPENSSL_VERSION=1.1.0g
+ENV NGINX_VERSION=1.12.2
+ENV NGINX_DIR=${BUILD_DIR}/nginx
+ENV DOWNLOAD_URL=https://pkg.goodrain.com/src/ngnix
+
+# download nginx dependents src
+RUN set -x \
+    && curl -sk $DOWNLOAD_URL/pcre-$PCRE_VERSION.tar.gz | tar xz -C /tmp/ \
+    && curl -sk $DOWNLOAD_URL/zlib-$ZLIB_VERSION.tar.gz | tar xz -C /tmp/ \
+    && curl -sk $DOWNLOAD_URL/openssl-${OPENSSL_VERSION}.tar.gz | tar xz -C /tmp/ \
+    && curl -sk $DOWNLOAD_URL/nginx-${NGINX_VERSION}.tar.gz | tar xz -C /tmp/
+
+# for build env
+ENV PATH=$PATH:$PHP_DIR/bin:${NGINX_DIR}/sbin
+
+COPY docker-php-* /usr/local/bin/
 COPY build.sh /
 
-RUN chmod a+x /build.sh
+RUN chmod +x /build.sh
 
 VOLUME [ "/opt/package" ]
 
