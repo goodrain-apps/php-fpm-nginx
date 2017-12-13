@@ -6,7 +6,7 @@ ENV NGINX_DIR=/opt/goodrain/nginx
 ENV NGINX_VERSION=1.12.2
 ENV PHP_VERSION=5.6.32
 ENV PHP_DIR=/opt/goodrain/php-fpm
-ENV PATH=$PATH:${NGINX_DIR}/bin:${PHP_DIR}/bin:${PHP_DIR}/sbin
+ENV PATH=$PATH:${NGINX_DIR}/sbin:${PHP_DIR}/bin:${PHP_DIR}/sbin
 ENV DOWNLOAD_URL=https://pkg.goodrain.com/grstack/debian
 
 RUN apt-get update \
@@ -28,6 +28,9 @@ EXPOSE 80
 VOLUME [ "/data" ]
 
 COPY docker-entrypoint.sh /
+ADD php/etc $PHP_DIR/etc
+ADD nginx/conf $NGINX_DIR/conf
+
 RUN chmod +x /docker-entrypoint.sh
 
 ENTRYPOINT [ "/docker-entrypoint.sh" ]
