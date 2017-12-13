@@ -14,6 +14,12 @@ RUN apt-get update && apt-get install -y \
 		libsqlite3-0 \
 		libxml2 \
 		xz-utils \
+		libpcre++0 \
+		libssl1.0.0 \
+		libfreetype6-dev \
+		libjpeg62-turbo-dev \
+		libmcrypt-dev \
+		libpng12-dev \
 	--no-install-recommends && rm -r /var/lib/apt/lists/*
 
 ENV BUILD_DIR=/opt/goodrain
@@ -76,7 +82,7 @@ ENV ZLIB_VERSION=1.2.11
 ENV OPENSSL_VERSION=1.1.0g
 ENV NGINX_VERSION=1.12.2
 ENV NGINX_DIR=${BUILD_DIR}/nginx
-ENV DOWNLOAD_URL=https://pkg.goodrain.com/src/ngnix
+ENV DOWNLOAD_URL=https://pkg.goodrain.com/src/nginx
 
 # download nginx dependents src
 RUN set -x \
@@ -89,10 +95,11 @@ RUN set -x \
 ENV PATH=$PATH:$PHP_DIR/bin:${NGINX_DIR}/sbin
 
 COPY docker-php-* /usr/local/bin/
-COPY build.sh /
+COPY build*.sh /
 
-RUN chmod +x /build.sh
+RUN chmod +x /build*.sh
 
 VOLUME [ "/opt/package" ]
 
-CMD [ "/build.sh" ]
+ENTRYPOINT [ "/build.sh" ]
+CMD ["all"]
